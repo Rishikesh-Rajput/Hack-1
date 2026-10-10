@@ -24,12 +24,6 @@ class CandidateSimulator:
         predictor: TrajectoryPredictor,
         detector: ConflictDetector,
     ) -> None:
-        """Initialize the simulator.
-
-        Args:
-            predictor: The trajectory predictor.
-            detector: The conflict detector.
-        """
         self.predictor = predictor
         self.detector = detector
 
@@ -40,24 +34,9 @@ class CandidateSimulator:
         aircraft_states: dict[str, Aircraft],
         current_time: float,
     ) -> ResolutionCandidate:
-        """Simulate a candidate maneuver and populate its simulation_result.
-
-        Args:
-            candidate: The maneuver candidate to evaluate.
-            current_conflicts: List of currently active conflicts (for baseline).
-            aircraft_states: Dictionary of all live aircraft states.
-            current_time: The current simulation time.
-
-        Returns:
-            The mutated candidate with simulation_result attached.
-        """
         if not candidate.is_valid:
-            # Don't simulate rejected/invalid candidates
             return candidate
 
-        # We must NOT mutate live state. Deep copy only the aircraft we are modifying.
-        # But wait, predict_all needs all aircraft. We can shallow copy the dict,
-        # and deep copy the specific aircraft we modify.
         if candidate.aircraft_id not in aircraft_states:
             candidate.is_valid = False
             candidate.rejection_reason = "Target aircraft not found in state."
@@ -65,21 +44,16 @@ class CandidateSimulator:
             
         sim_states = aircraft_states.copy()
         
-        # Isolate the target aircraft
         target_ac = sim_states[candidate.aircraft_id].model_copy(deep=True)
+        # We need the unmaneuvered trajectory for cross track and delay calculations
+        unmaneuvered_traj = self.predictor.predict(target_ac)
         
-        # Apply the maneuver
         target_ac.assign_maneuver(candidate.maneuver)
         sim_states[target_ac.id] = target_ac
         
-        # Predict trajectories for the entire airspace
         trajectories = self.predictor.predict_all(list(sim_states.values()))
-        
-        # Detect conflicts on the new predicted trajectories
         sim_conflicts = self.detector.detect_conflicts(trajectories, current_time)
         
-        # Find the original conflict we were trying to resolve
-        # We identify it by matching aircraft IDs (since conflict ID contains them)
         original_conflict = next((c for c in current_conflicts if c.id == candidate.conflict_id), None)
         
         if not original_conflict:
@@ -93,59 +67,67 @@ class CandidateSimulator:
             else original_conflict.aircraft_2_id
         )
         
-        # Check if original conflict is still present in sim_conflicts
-        # (detector normalizes pair IDs in CONF-A-B format)
         is_resolved = not any(
             (c.aircraft_1_id == candidate.aircraft_id and c.aircraft_2_id == other_ac_id) or
             (c.aircraft_2_id == candidate.aircraft_id and c.aircraft_1_id == other_ac_id)
             for c in sim_conflicts
         )
         
-        # Find new downstream conflicts
         current_conflict_ids = {c.id for c in current_conflicts}
         new_conflicts = [c for c in sim_conflicts if c.id not in current_conflict_ids]
         remaining_conflicts = [c for c in sim_conflicts if c.id in current_conflict_ids and c.id != candidate.conflict_id]
         
-        # Calculate minimum separation achieved with the specific conflicting aircraft
-        min_h, min_v = self._calculate_cpa(trajectories, candidate.aircraft_id, other_ac_id)
+        min_h, min_v, time_restored = self._calculate_cpa_stats(trajectories, candidate.aircraft_id, other_ac_id)
+        max_xt, delay = self._calculate_deviation_stats(unmaneuvered_traj, trajectories[candidate.aircraft_id])
         
-        # Create simulation result
+        # Margin checks
+        req_h = self.detector.config.horizontal_nm + getattr(self.detector.config, 'safety_margin_nm', 1.0)
+        req_v = self.detector.config.vertical_ft + getattr(self.detector.config, 'safety_margin_ft', 0.0)
+        
         candidate.simulation_result = CandidateSimulationResult(
             original_conflict_resolved=is_resolved,
             remaining_conflicts=remaining_conflicts,
             new_conflicts=new_conflicts,
             min_horizontal_separation_nm=min_h,
             min_vertical_separation_ft=min_v,
+            max_cross_track_nm=max_xt,
+            delay_sec=delay,
+            time_separation_restored=time_restored,
         )
         
         if not is_resolved:
             candidate.is_valid = False
             candidate.rejection_reason = "Maneuver does not resolve the conflict."
+        elif new_conflicts:
+            candidate.is_valid = False
+            candidate.rejection_reason = "Maneuver introduces new conflicts."
             
         return candidate
 
-    def _calculate_cpa(
+    def _calculate_cpa_stats(
         self, trajectories: dict[str, any], ac1_id: str, ac2_id: str
-    ) -> tuple[float, float]:
-        """Calculate the closest point of approach (horizontal, vertical) between two trajectories."""
+    ) -> tuple[float, float, float | None]:
         if ac1_id not in trajectories or ac2_id not in trajectories:
-            return 0.0, 0.0
+            return 0.0, 0.0, None
             
         traj1 = trajectories[ac1_id]
         traj2 = trajectories[ac2_id]
         
-        if not traj1.points or not traj2.points:
-            return 0.0, 0.0
-            
         points1_by_time = {p.time: p for p in traj1.points}
         points2_by_time = {p.time: p for p in traj2.points}
         common_times = sorted(set(points1_by_time.keys()).intersection(points2_by_time.keys()))
         
         if not common_times:
-            return 0.0, 0.0
+            return 0.0, 0.0, None
             
         min_horizontal_sep = float("inf")
         cpa_vertical_sep = float("inf")
+        
+        req_h = self.detector.config.horizontal_nm
+        req_v = self.detector.config.vertical_ft
+        
+        time_restored = None
+        in_conflict = False
         
         for t in common_times:
             p1 = points1_by_time[t]
@@ -157,8 +139,59 @@ class CandidateSimulator:
             )
             vert_dist_ft = abs(p1.position.altitude - p2.position.altitude)
             
+            # Is there a violation?
+            violation = (horiz_dist_nm < req_h) and (vert_dist_ft < req_v)
+            if violation:
+                in_conflict = True
+                time_restored = None
+            elif in_conflict and not violation and time_restored is None:
+                time_restored = t
+            
             if horiz_dist_nm < min_horizontal_sep:
                 min_horizontal_sep = horiz_dist_nm
                 cpa_vertical_sep = vert_dist_ft
                 
-        return min_horizontal_sep, cpa_vertical_sep
+        return min_horizontal_sep, cpa_vertical_sep, time_restored
+
+    def _calculate_deviation_stats(
+        self, unmaneuvered_traj: any, maneuvered_traj: any
+    ) -> tuple[float, float]:
+        """Calculates max cross-track error and delay.
+        
+        For a simplistic prototype, we find max distance between points at same time,
+        and for delay, we could see if maneuvered aircraft reaches the final unmaneuvered
+        point later, but since both run to horizon_sec, we compare final distance to end.
+        """
+        max_xt = 0.0
+        
+        points_u = {p.time: p for p in unmaneuvered_traj.points}
+        points_m = {p.time: p for p in maneuvered_traj.points}
+        common_times = sorted(set(points_u.keys()).intersection(points_m.keys()))
+        
+        for t in common_times:
+            pu = points_u[t]
+            pm = points_m[t]
+            d = haversine_distance_nm(
+                pu.position.latitude, pu.position.longitude,
+                pm.position.latitude, pm.position.longitude
+            )
+            if d > max_xt:
+                max_xt = d
+                
+        # Delay calculation: how much longer does it take to get to the same destination?
+        # Since horizon is fixed, the maneuvered aircraft might cover less ground (delay > 0)
+        # Delay (sec) ~= distance_behind (NM) / speed (NM/s)
+        delay = 0.0
+        if common_times:
+            last_t = common_times[-1]
+            pu = points_u[last_t]
+            pm = points_m[last_t]
+            dist_behind = haversine_distance_nm(
+                pu.position.latitude, pu.position.longitude,
+                pm.position.latitude, pm.position.longitude
+            )
+            spd_nm_s = pm.velocity.ground_speed / 3600.0
+            if spd_nm_s > 0:
+                delay = dist_behind / spd_nm_s
+                
+        return max_xt, delay

@@ -2,24 +2,19 @@
 
 Deterministic physics for advancing aircraft position and state
 over a simulation time step.
-
-Movement model:
-1. Horizontal: Great-circle navigation using heading and ground speed.
-2. Vertical: Linear interpolation using vertical speed.
-3. Heading/speed: Constant unless a maneuver is being applied.
-
-This module has NO web dependencies and can be used standalone.
 """
 
 from __future__ import annotations
+import math
 
 from core.geo.calculations import (
     destination_point,
     knots_to_nm_per_second,
     fpm_to_fps,
     normalize_heading,
+    initial_bearing,
 )
-from core.models.aircraft import Aircraft, AircraftStatus, Maneuver, Position, Velocity
+from core.models.aircraft import Aircraft, AircraftStatus, Position, Velocity
 
 
 def propagate_position(
@@ -31,97 +26,86 @@ def propagate_position(
     vertical_speed: float,
     dt: float,
 ) -> tuple[float, float, float]:
-    """Propagate a position forward by dt seconds.
-
-    Args:
-        latitude: Current latitude in degrees.
-        longitude: Current longitude in degrees.
-        altitude: Current altitude in feet.
-        heading: Current heading in degrees true.
-        ground_speed: Current ground speed in knots.
-        vertical_speed: Current vertical speed in fpm.
-        dt: Time step in seconds.
-
-    Returns:
-        Tuple of (new_latitude, new_longitude, new_altitude).
-    """
-    # Horizontal movement via great-circle
     distance_nm = knots_to_nm_per_second(ground_speed) * dt
     new_lat, new_lon = destination_point(latitude, longitude, heading, distance_nm)
-
-    # Vertical movement (linear)
     altitude_change = fpm_to_fps(vertical_speed) * dt
     new_altitude = max(0.0, altitude + altitude_change)
-
     return (new_lat, new_lon, new_altitude)
 
 
-def apply_maneuver_effects(
-    aircraft: Aircraft,
-    current_time: float,
-) -> None:
-    """Apply maneuver effects to aircraft state.
-
-    If the aircraft has an assigned maneuver and it's within the
-    maneuver's active time window, apply the heading/altitude/speed
-    changes. If the maneuver has expired, clear it.
-
-    This mutates the aircraft in place.
-
-    Args:
-        aircraft: Aircraft to apply maneuver effects to.
-        current_time: Current simulation time in seconds.
-    """
+def apply_maneuver_physics(aircraft: Aircraft, dt: float, current_time: float) -> None:
     maneuver = aircraft.assigned_maneuver
     if maneuver is None:
         return
 
-    if current_time < maneuver.start_time:
-        # Maneuver hasn't started yet
-        return
-
+    # Check expiration
     if current_time >= maneuver.end_time:
-        # Maneuver has expired - clear it and restore original parameters
         aircraft.clear_maneuver()
         return
 
-    # Maneuver is active - apply changes (only once, at start)
-    if aircraft.status == AircraftStatus.MANEUVERING:
-        # Changes are already applied via assign_maneuver
-        # The heading/altitude/speed changes were applied when the maneuver was assigned
-        pass
+    # Constants
+    TURN_RATE = 3.0 * dt
+    CLIMB_RATE = 1500.0
+    ACCEL_RATE = 2.0 * dt  # knots per second
+
+    t_active = current_time - maneuver.start_time
+    if t_active < 0:
+        return
+
+    # Phase: 1. Deviation/Hold (t < hold_sec)  2. Rejoin (t >= hold_sec)
+    phase = "HOLD" if t_active < maneuver.hold_sec else "REJOIN"
+
+    # Heading
+    if maneuver.heading_change != 0.0:
+        if phase == "HOLD":
+            target_heading = normalize_heading(aircraft.original_heading + maneuver.heading_change)
+        else:
+            # Rejoin to original path far ahead
+            rejoin_dist = knots_to_nm_per_second(aircraft.original_speed) * (maneuver.duration - t_active)
+            rejoin_lat, rejoin_lon = destination_point(
+                aircraft.position.latitude, aircraft.position.longitude, aircraft.original_heading, rejoin_dist
+            )
+            target_heading = initial_bearing(
+                aircraft.position.latitude, aircraft.position.longitude, rejoin_lat, rejoin_lon
+            )
+
+        diff = normalize_heading(target_heading - aircraft.velocity.heading)
+        if diff > 180:
+            diff -= 360
+        if abs(diff) <= TURN_RATE:
+            aircraft.velocity.heading = target_heading
+        else:
+            aircraft.velocity.heading = normalize_heading(aircraft.velocity.heading + math.copysign(TURN_RATE, diff))
+
+    # Altitude
+    if maneuver.altitude_change != 0.0:
+        target_alt = aircraft.original_altitude + maneuver.altitude_change if phase == "HOLD" else aircraft.original_altitude
+        alt_diff = target_alt - aircraft.position.altitude
+        
+        # Determine vertical speed needed
+        if abs(alt_diff) < 10.0:
+            aircraft.velocity.vertical_speed = 0.0
+            aircraft.position.altitude = target_alt
+        else:
+            aircraft.velocity.vertical_speed = math.copysign(CLIMB_RATE, alt_diff)
+
+    # Speed
+    if maneuver.speed_change != 0.0:
+        target_speed = aircraft.original_speed + maneuver.speed_change if phase == "HOLD" else aircraft.original_speed
+        spd_diff = target_speed - aircraft.velocity.ground_speed
+        if abs(spd_diff) <= ACCEL_RATE:
+            aircraft.velocity.ground_speed = target_speed
+        else:
+            aircraft.velocity.ground_speed += math.copysign(ACCEL_RATE, spd_diff)
 
 
 def propagate_aircraft(aircraft: Aircraft, dt: float, current_time: float) -> Aircraft:
-    """Propagate an aircraft's state forward by one time step.
-
-    This is the main entry point for aircraft state advancement.
-    It handles:
-    1. Maneuver effect application/expiration
-    2. Position propagation using great-circle navigation
-    3. Timestamp update
-
-    This creates a new Aircraft with updated state (does not mutate the original).
-
-    Args:
-        aircraft: Current aircraft state.
-        dt: Time step in seconds.
-        current_time: Current simulation time before this step.
-
-    Returns:
-        New Aircraft instance with updated position and state.
-    """
-    # Work on a copy to maintain immutability for the caller
     updated = aircraft.model_copy(deep=True)
+    apply_maneuver_physics(updated, dt, current_time)
 
-    # Apply or expire maneuver effects
-    apply_maneuver_effects(updated, current_time + dt)
-
-    # Skip propagation for exited aircraft
     if updated.status == AircraftStatus.EXITED:
         return updated
 
-    # Propagate position
     new_lat, new_lon, new_alt = propagate_position(
         latitude=updated.position.latitude,
         longitude=updated.position.longitude,
@@ -132,12 +116,10 @@ def propagate_aircraft(aircraft: Aircraft, dt: float, current_time: float) -> Ai
         dt=dt,
     )
 
-    # Update position
     updated.position = Position(
         latitude=new_lat,
         longitude=new_lon,
         altitude=new_alt,
         timestamp=current_time + dt,
     )
-
     return updated

@@ -23,7 +23,11 @@ class OpenSkyProvider:
     """Poll OpenSky state vectors. Credentials remain server-side."""
 
     def __init__(self, region: Optional[MonitoringRegionConfig] = None) -> None:
-        self.region = region
+        if region:
+            from core.geo.regions import MonitoringRegion
+            self.region = MonitoringRegion(**region.model_dump())
+        else:
+            self.region = None
         self.active = False
         self.thread: threading.Thread | None = None
         self.latest_aircraft: list[Aircraft] = []
@@ -95,14 +99,65 @@ class OpenSkyProvider:
 
     def _parse_states(self, states: list[list[Any]]) -> None:
         parsed: list[Aircraft] = []
-        timestamp = time.time()
+        current_time = time.time()
+        
         for state in states:
-            if not state:
+            if not state or len(state) < 17:
                 continue
-            icao24, callsign, lon, lat, altitude, speed, heading, vertical_rate = state[0], state[1], state[5], state[6], state[7], state[9], state[10], state[11]
+                
+            icao24, callsign = state[0], state[1]
+            time_position = state[3]
+            last_contact = state[4]
+            lon, lat = state[5], state[6]
+            altitude = state[7]
+            on_ground = state[8]
+            speed, heading, vertical_rate = state[9], state[10], state[11]
+            
+            # Require essential data
             if lat is None or lon is None or altitude is None or speed is None:
                 continue
-            parsed.append(Aircraft(id=str(icao24).strip(), callsign=str(callsign).strip() if callsign else str(icao24).strip(), aircraft_type="LIVE", position=Position(latitude=lat, longitude=lon, altitude=altitude * 3.28084, timestamp=timestamp), velocity=Velocity(ground_speed=speed * 1.94384, vertical_speed=(vertical_rate or 0.0) * 3.28084 * 60, heading=heading or 0.0), flight_plan=FlightPlan(origin="UNKNOWN", destination="UNKNOWN", cruise_altitude=35000, cruise_speed=400), status=AircraftStatus.ACTIVE))
+                
+            # Filter grounded aircraft explicitly
+            if on_ground:
+                continue
+                
+            # Filter low altitude aircraft (conservative fallback since we lack AGL data)
+            if (altitude * 3.28084) < 1500:
+                continue
+                
+            # Check data freshness (no older than 60s)
+            latest_time = time_position if time_position else last_contact
+            if latest_time is None or (current_time - latest_time) > 60:
+                continue
+                
+            # Filter explicitly by the precise polygon, not just the bounding box
+            if self.region and not self.region.is_point_inside(lat, lon):
+                continue
+                
+            # Keep the wall-clock timestamp the observation was made, 
+            # Engine will map it relative to its simulation clock
+            parsed.append(
+                Aircraft(
+                    id=str(icao24).strip(),
+                    callsign=str(callsign).strip() if callsign else str(icao24).strip(),
+                    aircraft_type="LIVE",
+                    position=Position(
+                        latitude=lat,
+                        longitude=lon,
+                        altitude=altitude * 3.28084,  # meters to feet
+                        timestamp=float(latest_time)
+                    ),
+                    velocity=Velocity(
+                        ground_speed=speed * 1.94384,  # m/s to knots
+                        vertical_speed=(vertical_rate or 0.0) * 3.28084 * 60,  # m/s to fpm
+                        heading=heading or 0.0
+                    ),
+                    flight_plan=FlightPlan(origin="UNKNOWN", destination="UNKNOWN", cruise_altitude=None, cruise_speed=None),
+                    status=AircraftStatus.ACTIVE
+                )
+            )
+            
         with self._lock:
             self.latest_aircraft = parsed
         logger.info("Updated %s live aircraft from OpenSky.", len(parsed))
+

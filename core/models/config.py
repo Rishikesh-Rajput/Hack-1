@@ -28,6 +28,8 @@ class PredictionConfig(BaseModel):
     """Trajectory prediction parameters."""
 
     horizon_sec: float = Field(default=900.0, gt=0, description="Prediction horizon in seconds (default: 15 min)")
+    live_horizon_sec: float = Field(default=180.0, gt=0, description="Live prediction horizon in seconds (default: 3 min)")
+    vertical_prediction_duration_sec: float = Field(default=60.0, ge=0, description="Duration to project vertical rate")
     step_sec: float = Field(default=5.0, gt=0, description="Prediction time step in seconds")
     max_points: int = Field(default=300, gt=0, description="Maximum number of points in predicted trajectory")
 
@@ -41,6 +43,7 @@ class SeparationConfig(BaseModel):
 
     horizontal_nm: float = Field(default=5.0, gt=0, description="Horizontal separation minimum in NM")
     vertical_ft: float = Field(default=1000.0, gt=0, description="Vertical separation minimum in feet")
+    persistence_required_updates: int = Field(default=3, ge=1, description="Consecutive updates required for persistent alert")
 
 
 class SeverityConfig(BaseModel):
@@ -62,8 +65,13 @@ class ManeuverConfig(BaseModel):
     heading_deltas: list[float] = Field(default=[15.0, 30.0], description="Heading change options in degrees")
     altitude_deltas: list[float] = Field(default=[1000.0, 2000.0], description="Altitude change options in feet")
     speed_deltas_pct: list[float] = Field(default=[5.0, 10.0], description="Speed change options as percentage")
+    hold_options_sec: list[float] = Field(default=[60.0, 120.0, 180.0, 240.0, 300.0], description="Hold durations")
     maneuver_duration_sec: float = Field(default=120.0, gt=0, description="Default maneuver duration in seconds")
     max_candidates: int = Field(default=10, gt=0, description="Maximum candidates to generate per conflict")
+    turn_rate_deg_s: float = Field(default=3.0, gt=0, description="Turn rate in degrees per second")
+    climb_rate_fpm: float = Field(default=1500.0, gt=0, description="Climb rate in feet per minute")
+    safety_margin_nm: float = Field(default=1.0, ge=0, description="Extra horizontal safety margin")
+    safety_margin_ft: float = Field(default=0.0, ge=0, description="Extra vertical safety margin")
 
 
 class ScoringWeights(BaseModel):

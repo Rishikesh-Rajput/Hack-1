@@ -20,6 +20,9 @@ class CandidateSimulationResult(BaseModel):
     new_conflicts: list[Conflict] = Field(default_factory=list, description="List of newly introduced downstream conflicts")
     min_horizontal_separation_nm: float = Field(description="Minimum horizontal separation achieved with the conflicting aircraft")
     min_vertical_separation_ft: float = Field(description="Minimum vertical separation achieved with the conflicting aircraft")
+    max_cross_track_nm: float = Field(default=0.0, description="Max lateral deviation from original track")
+    delay_sec: float = Field(default=0.0, description="Delay introduced compared to original unmaneuvered path")
+    time_separation_restored: float | None = Field(default=None, description="Time at which separation is safely restored")
 
 
 class ResolutionCandidate(BaseModel):

@@ -70,8 +70,8 @@ class FlightPlan(BaseModel):
 
     origin: str = Field(description="ICAO departure airport code")
     destination: str = Field(description="ICAO arrival airport code")
-    cruise_altitude: float = Field(ge=0.0, description="Cruise altitude in feet")
-    cruise_speed: float = Field(ge=0.0, description="Cruise speed in knots")
+    cruise_altitude: Optional[float] = Field(default=None, ge=0.0, description="Cruise altitude in feet")
+    cruise_speed: Optional[float] = Field(default=None, ge=0.0, description="Cruise speed in knots")
     waypoints: list[Position] = Field(default_factory=list, description="Planned route waypoints")
 
 
@@ -87,7 +87,8 @@ class Maneuver(BaseModel):
     altitude_change: float = Field(default=0.0, description="Altitude change in feet (positive=climb)")
     speed_change: float = Field(default=0.0, description="Speed change in knots")
     start_time: float = Field(ge=0.0, description="Simulation time to begin maneuver")
-    duration: float = Field(gt=0.0, description="Maneuver duration in seconds")
+    hold_sec: float = Field(default=120.0, gt=0.0, description="Hold duration in seconds before rejoining")
+    duration: float = Field(gt=0.0, description="Total maneuver duration in seconds (hold + rejoin)")
 
     @property
     def end_time(self) -> float:
@@ -127,22 +128,8 @@ class Aircraft(BaseModel):
         self.assigned_maneuver = maneuver
         self.status = AircraftStatus.MANEUVERING
 
-        # Apply maneuver deltas to velocity and altitude
-        if maneuver.heading_change:
-            self.velocity.heading = (self.velocity.heading + maneuver.heading_change) % 360.0
-        if maneuver.speed_change:
-            self.velocity.ground_speed = max(0.0, self.velocity.ground_speed + maneuver.speed_change)
-        if maneuver.altitude_change:
-            self.position.altitude = max(0.0, self.position.altitude + maneuver.altitude_change)
-
     def clear_maneuver(self) -> None:
         """Clear the assigned maneuver and restore original parameters."""
-        if self.original_heading is not None:
-            self.velocity.heading = self.original_heading
-        if self.original_speed is not None:
-            self.velocity.ground_speed = self.original_speed
-        if self.original_altitude is not None:
-            self.position.altitude = self.original_altitude
         self.assigned_maneuver = None
         self.original_heading = None
         self.original_altitude = None

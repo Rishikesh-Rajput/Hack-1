@@ -77,6 +77,8 @@ class SimulationEngine:
         self._aircraft: dict[str, Aircraft] = {}
         # Records actual historical flight paths
         self._history: dict[str, list[TrajectoryPoint]] = {}
+        self._conflict_persistence: dict[str, int] = {}
+        self._last_processed_ingest: float = 0.0
         
         from core.detection.predictor import TrajectoryPredictor
         from core.detection.detector import ConflictDetector
@@ -138,6 +140,9 @@ class SimulationEngine:
 
     def reset(self) -> None:
         """Reset simulation back to initial scenario state."""
+        self._conflict_persistence = {}
+        self._last_processed_ingest = 0.0
+        
         if self._scenario is None:
             self.clock = 0.0
             self._aircraft = {}
@@ -213,6 +218,43 @@ class SimulationEngine:
             raise ValueError(f"Speed multiplier must be positive, got {multiplier}")
         self.speed_multiplier = multiplier
 
+    def apply_conflict_persistence(self, raw_conflicts: list[Conflict]) -> list[Conflict]:
+        is_new_ingest = False
+        last_live = getattr(self, '_last_live_ingest', 0.0)
+        last_processed = getattr(self, '_last_processed_ingest', 0.0)
+        
+        if last_live > last_processed:
+            is_new_ingest = True
+            self._last_processed_ingest = last_live
+            
+        persistent = []
+        current_active = set()
+        
+        req_updates = getattr(self.config.separation, 'persistence_required_updates', 3)
+        
+        for c in raw_conflicts:
+            current_active.add(c.id)
+            
+            # Fast-track critical severity (e.g. TTC < 120s) to not hide urgent alerts
+            if c.time_to_conflict_sec < self.config.severity.critical_sec:
+                persistent.append(c)
+                continue
+                
+            if c.id not in self._conflict_persistence:
+                self._conflict_persistence[c.id] = 1
+            elif is_new_ingest:
+                self._conflict_persistence[c.id] += 1
+                
+            if self._conflict_persistence[c.id] >= req_updates:
+                persistent.append(c)
+                
+        # Clean up stale conflicts that are no longer predicted
+        stale = [cid for cid in self._conflict_persistence if cid not in current_active]
+        for cid in stale:
+            del self._conflict_persistence[cid]
+            
+        return persistent
+
     def tick(self, dt: Optional[float] = None) -> SimulationSnapshot:
         """Advance the simulation by dt seconds (default: sim_config.time_step).
 
@@ -228,9 +270,23 @@ class SimulationEngine:
 
         # Deterministic ordering by sorted aircraft ID
         if getattr(self, 'use_live_data', False) and getattr(self, 'live_provider', None):
-            live_ac = self.live_provider.get_latest_aircraft()
-            if live_ac:
-                self._aircraft = {ac.id: ac for ac in live_ac}
+            status = self.live_provider.get_status()
+            last_live = getattr(self, '_last_live_ingest', 0.0)
+            
+            # If the provider has a fresh batch we haven't processed yet
+            if status['last_success_at'] and status['last_success_at'] > last_live:
+                live_ac = self.live_provider.get_latest_aircraft()
+                caught_up_ac = {}
+                for ac in live_ac:
+                    # The aircraft is at ac.position.timestamp. We need to fast-forward it to self.clock
+                    catch_up_dt = max(0.0, self.clock - ac.position.timestamp)
+                    if catch_up_dt > 0:
+                        # Propagate it to exactly self.clock
+                        ac = propagate_aircraft(ac, dt=catch_up_dt, current_time=ac.position.timestamp)
+                    caught_up_ac[ac.id] = ac
+                self._aircraft = caught_up_ac
+                self._last_live_ingest = status['last_success_at']
+
         sorted_ids = sorted(self._aircraft.keys())
 
         updated_aircraft: dict[str, Aircraft] = {}
@@ -254,8 +310,19 @@ class SimulationEngine:
         self.clock += step
         
         # Predict trajectories and detect conflicts
-        trajectories = self.predictor.predict_all(self.aircraft)
-        self._conflicts = self.detector.detect_conflicts(trajectories, self.clock)
+        pred_cfg = self.config.prediction.model_copy()
+        if getattr(self, 'use_live_data', False):
+            pred_cfg.horizon_sec = pred_cfg.live_horizon_sec
+            
+        trajectories = self.predictor.predict_all(self.aircraft, config=pred_cfg)
+        
+        # We need to detect conflicts and then apply persistence filtering if live
+        raw_conflicts = self.detector.detect_conflicts(trajectories, self.clock)
+        
+        if getattr(self, 'use_live_data', False):
+            self._conflicts = self.apply_conflict_persistence(raw_conflicts)
+        else:
+            self._conflicts = raw_conflicts
 
         return self.get_snapshot()
 

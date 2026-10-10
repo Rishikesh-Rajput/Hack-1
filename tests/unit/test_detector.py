@@ -123,3 +123,16 @@ def test_duplicate_pair_prevention(predictor, detector):
 def test_invalid_input(detector):
     # Empty trajectories
     assert detector.detect_conflicts({}, 0.0) == []
+def test_vertical_separation_25k_descent(predictor, detector):
+    # One aircraft at FL400 (40,000 ft), other at FL150 (15,000 ft) -> 25k diff.
+    # Higher aircraft is descending, but only short-term.
+    ac1 = create_aircraft("A1", 0.0, 0.0, 15000.0, 90.0, 400.0)
+    ac2 = create_aircraft("A2", 0.0, 0.33, 40000.0, 270.0, 400.0, vs=-2000.0)
+    # Set to LIVE to trigger the 60s vertical rate fadeout logic
+    ac2.aircraft_type = "LIVE"
+    ac2.flight_plan.cruise_altitude = None
+    
+    trajectories = predictor.predict_all([ac1, ac2])
+    conflicts = detector.detect_conflicts(trajectories, 0.0)
+    
+    assert len(conflicts) == 0
