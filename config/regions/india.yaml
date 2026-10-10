@@ -1,0 +1,21 @@
+# Indian Airspace Monitoring Region (Configurable Prototype AOI)
+# Region-agnostic core receives this polygon via configuration.
+name: "Indian Airspace (Simplified FIR)"
+altitude_floor_ft: 0.0
+altitude_ceiling_ft: 60000.0
+approach_buffer_nm: 50.0
+polygon:
+  - [35.5, 74.0]    # Northern border / Kashmir
+  - [32.0, 78.5]    # Himachal / Ladakh
+  - [28.5, 88.5]    # Sikkim
+  - [27.5, 96.0]    # Arunachal East
+  - [23.5, 93.0]    # Mizoram / Myanmar border
+  - [21.5, 87.0]    # Bay of Bengal / Odisha coast
+  - [13.0, 80.5]    # Chennai coast
+  - [8.0, 77.5]     # Kanyakumari (Southern tip)
+  - [8.5, 72.5]     # Lakshadweep / Arabian Sea
+  - [18.5, 72.5]    # Mumbai offshore
+  - [23.5, 68.0]    # Gujarat / Kutch
+  - [28.0, 70.0]    # Rajasthan / Border
+  - [32.5, 74.5]    # Punjab border
+  - [35.5, 74.0]    # Closed polygon

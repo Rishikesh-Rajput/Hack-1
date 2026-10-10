@@ -1,0 +1,56 @@
+# Scenario 4 ? OVERLAPPING_TRAFFIC
+# Three aircraft: resolving conflict between AC1 and AC2 may impact adjacent AC3
+name: "Overlapping Multi-Aircraft Traffic"
+description: "Two conflicting aircraft with a third aircraft operating on an adjacent altitude/path, demonstrating downstream constraints."
+initial_time: 0.0
+aircraft:
+  - id: "ac_ai101"
+    callsign: "AI101"
+    type: "A320"
+    position:
+      lat: 20.0
+      lon: 78.0
+      alt: 35000
+    velocity:
+      ground_speed: 450
+      vertical_speed: 0
+      heading: 45.0
+    flight_plan:
+      origin: "VABB"
+      destination: "VECC"  # Kolkata
+      cruise_altitude: 35000
+      cruise_speed: 450
+
+  - id: "ac_uk802"
+    callsign: "UK802"
+    type: "B738"
+    position:
+      lat: 21.4
+      lon: 79.4
+      alt: 35000
+    velocity:
+      ground_speed: 450
+      vertical_speed: 0
+      heading: 225.0
+    flight_plan:
+      origin: "VECC"
+      destination: "VABB"
+      cruise_altitude: 35000
+      cruise_speed: 450
+
+  - id: "ac_6e551"
+    callsign: "6E551"
+    type: "A320"
+    position:
+      lat: 20.7
+      lon: 79.1
+      alt: 36000
+    velocity:
+      ground_speed: 440
+      vertical_speed: 0
+      heading: 45.0
+    flight_plan:
+      origin: "VOBL"
+      destination: "VIDP"
+      cruise_altitude: 36000
+      cruise_speed: 440

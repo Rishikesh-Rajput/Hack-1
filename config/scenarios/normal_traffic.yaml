@@ -1,0 +1,56 @@
+# Scenario 1 ? NORMAL_TRAFFIC
+# Multiple aircraft flying along parallel and non-conflicting corridors in Indian airspace
+name: "Normal Traffic (No Conflicts)"
+description: "Realistic traffic flows with sufficient lateral and vertical separation across central and western India."
+initial_time: 0.0
+aircraft:
+  - id: "ac_ai101"
+    callsign: "AI101"
+    type: "A320"
+    position:
+      lat: 19.09
+      lon: 72.87
+      alt: 33000
+    velocity:
+      ground_speed: 460
+      vertical_speed: 0
+      heading: 35.0
+    flight_plan:
+      origin: "VABB"  # Mumbai
+      destination: "VIDP"  # Delhi
+      cruise_altitude: 33000
+      cruise_speed: 460
+
+  - id: "ac_6e205"
+    callsign: "6E205"
+    type: "A321"
+    position:
+      lat: 28.56
+      lon: 77.10
+      alt: 35000
+    velocity:
+      ground_speed: 470
+      vertical_speed: 0
+      heading: 215.0
+    flight_plan:
+      origin: "VIDP"  # Delhi
+      destination: "VABB"  # Mumbai
+      cruise_altitude: 35000
+      cruise_speed: 470
+
+  - id: "ac_sq308"
+    callsign: "SQ308"
+    type: "B77W"
+    position:
+      lat: 13.19
+      lon: 80.17
+      alt: 38000
+    velocity:
+      ground_speed: 490
+      vertical_speed: 0
+      heading: 310.0
+    flight_plan:
+      origin: "WSSS"  # Singapore
+      destination: "EGLL"  # London Heathrow (transiting Indian airspace)
+      cruise_altitude: 38000
+      cruise_speed: 490

@@ -1,0 +1,39 @@
+# Scenario 2 ? HEAD_ON_CONFLICT
+# Primary demo scenario: Two aircraft converging head-on at FL350 on airway near Nagpur
+name: "Head-On Conflict (FL350)"
+description: "AI101 northbound and UK802 southbound flying directly toward each other at identical flight level (35,000 ft)."
+initial_time: 0.0
+aircraft:
+  - id: "ac_ai101"
+    callsign: "AI101"
+    type: "A320"
+    position:
+      lat: 20.0
+      lon: 79.0
+      alt: 35000
+    velocity:
+      ground_speed: 450
+      vertical_speed: 0
+      heading: 0.0   # Directly North
+    flight_plan:
+      origin: "VOBL"  # Bengaluru
+      destination: "VIDP"  # Delhi
+      cruise_altitude: 35000
+      cruise_speed: 450
+
+  - id: "ac_uk802"
+    callsign: "UK802"
+    type: "B738"
+    position:
+      lat: 22.0
+      lon: 79.0
+      alt: 35000
+    velocity:
+      ground_speed: 450
+      vertical_speed: 0
+      heading: 180.0  # Directly South
+    flight_plan:
+      origin: "VIDP"  # Delhi
+      destination: "VOBL"  # Bengaluru
+      cruise_altitude: 35000
+      cruise_speed: 450

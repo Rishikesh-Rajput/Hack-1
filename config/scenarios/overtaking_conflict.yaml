@@ -1,0 +1,37 @@
+name: "Overtaking Conflict (FL350)"
+description: "A fast aircraft overtaking a slower aircraft on the same airway and flight level."
+initial_time: 0.0
+aircraft:
+  - id: "ac_slow"
+    callsign: "SLOW01"
+    type: "ATR72"
+    position:
+      lat: 20.5
+      lon: 79.0
+      alt: 35000
+    velocity:
+      ground_speed: 250
+      vertical_speed: 0
+      heading: 0.0   # North
+    flight_plan:
+      origin: "VOMM"
+      destination: "VIDP"
+      cruise_altitude: 35000
+      cruise_speed: 250
+
+  - id: "ac_fast"
+    callsign: "FAST99"
+    type: "B777"
+    position:
+      lat: 20.0
+      lon: 79.0
+      alt: 35000
+    velocity:
+      ground_speed: 480
+      vertical_speed: 0
+      heading: 0.0  # North, catching up quickly
+    flight_plan:
+      origin: "VOBL"
+      destination: "VIDP"
+      cruise_altitude: 35000
+      cruise_speed: 480
