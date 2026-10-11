@@ -1,0 +1,196 @@
+
+--- SCENARIO: crossing_conflict.yaml ---
+Loaded: Crossing Conflict (90 Degree Intersect) | Aircraft count: 2
+  EK384: pos=(21.0000, 77.0000), alt=36000.0, hdg=90.0
+  AI442: pos=(19.5000, 78.5000), alt=36000.0, hdg=0.0
+
+[t=0s]
+  No conflicts.
+
+[t=1s]
+  Conflict: CONF-ac_ai442-ac_ek384, pair=(ac_ai442, ac_ek384), sev=LOW, TTC=640.0s, sep=H:4.25NM/V:0ft
+
+[t=30s]
+  Conflict: CONF-ac_ai442-ac_ek384, pair=(ac_ai442, ac_ek384), sev=LOW, TTC=610.0s, sep=H:4.24NM/V:0ft
+
+[t=60s]
+  Conflict: CONF-ac_ai442-ac_ek384, pair=(ac_ai442, ac_ek384), sev=MEDIUM, TTC=580.0s, sep=H:4.24NM/V:0ft
+
+[t=120s]
+  Conflict: CONF-ac_ai442-ac_ek384, pair=(ac_ai442, ac_ek384), sev=MEDIUM, TTC=520.0s, sep=H:4.24NM/V:0ft
+
+[t=300s]
+  Conflict: CONF-ac_ai442-ac_ek384, pair=(ac_ai442, ac_ek384), sev=MEDIUM, TTC=340.0s, sep=H:4.25NM/V:0ft
+
+[t=600s]
+  Conflict: CONF-ac_ai442-ac_ek384, pair=(ac_ai442, ac_ek384), sev=CRITICAL, TTC=40.0s, sep=H:4.25NM/V:0ft
+
+--- SCENARIO: head_on_conflict.yaml ---
+Loaded: Head-On Conflict (FL350) | Aircraft count: 2
+  AI101: pos=(20.0000, 79.0000), alt=35000.0, hdg=0.0
+  UK802: pos=(22.0000, 79.0000), alt=35000.0, hdg=180.0
+
+[t=0s]
+  No conflicts.
+
+[t=1s]
+  Conflict: CONF-ac_
+--- SCENARIO: overlapping_traffic.yaml ---
+Loaded: Overlapping Multi-Aircraft Traffic | Aircraft: 3
+[t=0s] Conflicts: 0
+[t=60s] Conflicts: 1
+  Conflict: CONF-ac_ai101-ac_uk802, TTC=390.0s, sev=MEDIUM
+[t=300s] Conflicts: 1
+  Conflict: CONF-ac_ai101-ac_uk802, TTC=150.0s, sev=HIGH
+
+--- SCENARIO: overtaking_conflict.yaml ---
+Loaded: Overtaking Conflict (FL350) | Aircraft: 2
+[t=0s] Conflicts: 0
+[t=60s] Conflicts: 1
+  Conflict: CONF-ac_fast-ac_slow, TTC=335.0s, sev=MEDIUM
+[t=300s] Conflicts: 1
+  Conflict: CONF-ac_fast-ac_slow, TTC=95.0s, sev=CRITICAL
+]
+  No conflicts.
+
+--- SCENARIO: multiple_simultaneous_conflicts.yaml ---
+Loaded: Multiple Simultaneous Conflicts | Aircraft count: 6
+  PAIR1A: pos=(20.0000, 79.0000), alt=35000.0, hdg=0.0
+  PAIR1B: pos=(21.0000, 79.0000), alt=35000.0, hdg=180.0
+  PAIR2A: pos=(19.5000, 77.5000), alt=33000.0, hdg=90.0
+  PAIR2B: pos=(18.5000, 78.5000), alt=33000.0, hdg=0.0
+  PAIR3A: pos=(22.0000, 80.0000), alt=20000.0, hdg=90.0
+  PAIR3B: pos=(22.0000, 79.9000), alt=15000.0, hdg=90.0
+
+[t=0s]
+  No conflicts.
+
+[t=1s]
+  Conflict: CONF-ac_1a-ac_1b, pair=(ac_1a, ac_1b), sev=HIGH, TTC=220.0s, sep=H:0.21NM/V:0ft
+  Conflict: CONF-ac_2a-ac_2b, pair=(ac_2a, ac_2b), sev=MEDIUM, TTC=500.0s, sep=H:2.44NM/V:0ft
+
+[t=30s]
+  Conflict: CONF-ac_1a-ac_1b, pair=(ac_1a, ac_1b), sev=HIGH, TTC=195.0s, sep=H:0.04NM/V:0ft
+  Conflict: CONF-ac_2a-ac_2b, pair=(ac_2a, ac_2b), sev=MEDIUM, TTC=470.0s, sep=H:2.43NM/V:0ft
+
+[t=60s]
+  Conflict: CONF-ac_1a-ac_1b, pair=(ac_1a, ac_1b), sev=HIGH, TTC=165.0s, sep=H:0.04NM/V:0ft
+  Conflict: CONF-ac_2a-ac_2b, pair=(ac_2a, ac_2b), sev=MEDIUM, TTC=440.0s, sep=H:2.43NM/V:0ft
+
+[t=120s]
+  Conflict: CONF-ac_1a-ac_1b, pair=(ac_1a, ac_1b), sev=CRITICAL, TTC=105.0s, sep=H:0.04NM/V:0ft
+  Conflict: CONF-ac_2a-ac_2b, pair=(ac_2a, ac_2b), sev=MEDIUM, TTC=380.0s, sep=H:2.43NM/V:0ft
+
+[t=300s]
+  Conflict: CONF-ac_2a-ac_2b, pair=(ac_2a, ac_2b), sev=HIGH, TTC=200.0s, sep=H:2.43NM/V:0ft
+
+[t=600s]
+  No conflicts.
+
+--- SCENARIO: normal_traffic.yaml ---
+Loaded: Normal Traffic (No Conflicts) | Aircraft count: 3
+  AI101: pos=(19.0900, 72.8700), alt=33000.0, hdg=35.0
+  6E205: pos=(28.5600, 77.1000), alt=35000.0, hdg=215.0
+  SQ308: pos=(13.1900, 80.1700), alt=38000.0, hdg=310.0
+
+[t=0s]
+  No conflicts.
+
+[t=1s]
+  No conflicts.
+
+[t=30s]
+  No conflicts.
+
+[t=60s]
+  No conflicts.
+
+[t=120s]
+  No conflicts.
+
+[t=300s]
+  No conflicts.
+
+[t=600s]
+  No conflicts.
+
+--- SCENARIO: no_feasible_maneuver.yaml ---
+Loaded: No Feasible Maneuver | Aircraft count: 4
+  TRP01: pos=(20.0000, 79.0000), alt=35000.0, hdg=90.0
+  TRP02: pos=(20.0100, 79.0100), alt=35000.0, hdg=270.0
+  BLK01: pos=(20.0000, 79.0000), alt=36000.0, hdg=90.0
+  BLK02: pos=(20.0000, 79.0000), alt=34000.0, hdg=90.0
+
+[t=0s]
+  No conflicts.
+
+[t=1s]
+  Conflict: CONF-ac_center1-ac_center2, pair=(ac_center1, ac_center2), sev=CRITICAL, TTC=0.0s, sep=H:0.69NM/V:0ft
+
+[t=30s]
+  No conflicts.
+
+[t=60s]
+  No conflicts.
+
+[t=120s]
+  No conflicts.
+
+[t=300s]
+  No conflicts.
+
+[t=600s]
+  No conflicts.
+
+--- SCENARIO: overlapping_traffic.yaml ---
+Loaded: Overlapping Multi-Aircraft Traffic | Aircraft count: 3
+  AI101: pos=(20.0000, 78.0000), alt=35000.0, hdg=45.0
+  UK802: pos=(21.4000, 79.4000), alt=35000.0, hdg=225.0
+  6E551: pos=(20.7000, 79.1000), alt=36000.0, hdg=45.0
+
+[t=0s]
+  No conflicts.
+
+[t=1s]
+  Conflict: CONF-ac_ai101-ac_uk802, pair=(ac_ai101, ac_uk802), sev=MEDIUM, TTC=450.0s, sep=H:3.85NM/V:0ft
+
+[t=30s]
+  Conflict: CONF-ac_ai101-ac_uk802, pair=(ac_ai101, ac_uk802), sev=MEDIUM, TTC=420.0s, sep=H:3.84NM/V:0ft
+
+[t=60s]
+  Conflict: CONF-ac_ai101-ac_uk802, pair=(ac_ai101, ac_uk802), sev=MEDIUM, TTC=390.0s, sep=H:3.84NM/V:0ft
+
+[t=120s]
+  Conflict: CONF-ac_ai101-ac_uk802, pair=(ac_ai101, ac_uk802), sev=MEDIUM, TTC=330.0s, sep=H:3.84NM/V:0ft
+
+[t=300s]
+  Conflict: CONF-ac_ai101-ac_uk802, pair=(ac_ai101, ac_uk802), sev=HIGH, TTC=150.0s, sep=H:3.84NM/V:0ft
+
+[t=600s]
+  No conflicts.
+
+--- SCENARIO: overtaking_conflict.yaml ---
+Loaded: Overtaking Conflict (FL350) | Aircraft count: 2
+  SLOW01: pos=(20.5000, 79.0000), alt=35000.0, hdg=0.0
+  FAST99: pos=(20.0000, 79.0000), alt=35000.0, hdg=0.0
+
+[t=0s]
+  No conflicts.
+
+[t=1s]
+  Conflict: CONF-ac_fast-ac_slow, pair=(ac_fast, ac_slow), sev=MEDIUM, TTC=395.0s, sep=H:0.07NM/V:0ft
+
+[t=30s]
+  Conflict: CONF-ac_fast-ac_slow, pair=(ac_fast, ac_slow), sev=MEDIUM, TTC=365.0s, sep=H:0.01NM/V:0ft
+
+[t=60s]
+  Conflict: CONF-ac_fast-ac_slow, pair=(ac_fast, ac_slow), sev=MEDIUM, TTC=335.0s, sep=H:0.01NM/V:0ft
+
+[t=120s]
+  Conflict: CONF-ac_fast-ac_slow, pair=(ac_fast, ac_slow), sev=HIGH, TTC=275.0s, sep=H:0.01NM/V:0ft
+
+[t=300s]
+  Conflict: CONF-ac_fast-ac_slow, pair=(ac_fast, ac_slow), sev=CRITICAL, TTC=95.0s, sep=H:0.01NM/V:0ft
+
+[t=600s]
+  No conflicts.

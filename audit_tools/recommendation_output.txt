@@ -1,0 +1,42 @@
+
+--- SCENARIO: crossing_conflict.yaml ---
+Conflict: CONF-ac_ai442-ac_ek384
+Recommendation: HEADING | AC: ac_ai442 | score: 69.667
+  Promised sep: H=20.18 NM, V=0 ft
+Running brute-force execution to 1500s...
+Actual separation achieved: H=20.13 NM, V=0 ft
+
+--- SCENARIO: head_on_conflict.yaml ---
+Conflict: CONF-ac_ai101-ac_uk802
+Recommendation: HEADING | AC: ac_ai101 | score: 69.667
+  Promised sep: H=15.59 NM, V=0 ft
+Running brute-force execution to 1500s...
+Actual separation achieved: H=15.53 NM, V=0 ft
+
+--- SCENARIO: multiple_simultaneous_conflicts.yaml ---
+Conflict: CONF-ac_1a-ac_1b
+Recommendation: ALTITUDE | AC: ac_1a | score: 68.000
+  Promised sep: H=0.21 NM, V=2000 ft
+Running brute-force execution to 1500s...
+Actual separation achieved: H=0.04 NM, V=2000 ft
+
+--- SCENARIO: normal_traffic.yaml ---
+No initial conflicts.
+
+--- SCENARIO: no_feasible_maneuver.yaml ---
+Conflict: CONF-ac_center1-ac_center2
+No valid candidates found.
+
+--- SCENARIO: overlapping_traffic.yaml ---
+Conflict: CONF-ac_ai101-ac_uk802
+Recommendation: HEADING | AC: ac_ai101 | score: 69.667
+  Promised sep: H=11.14 NM, V=0 ft
+Running brute-force execution to 1500s...
+Actual separation achieved: H=11.07 NM, V=0 ft
+
+--- SCENARIO: overtaking_conflict.yaml ---
+Conflict: CONF-ac_fast-ac_slow
+Recommendation: HEADING | AC: ac_fast | score: 69.667
+  Promised sep: H=15.03 NM, V=0 ft
+Running brute-force execution to 1500s...
+Actual separation achieved: H=14.96 NM, V=0 ft

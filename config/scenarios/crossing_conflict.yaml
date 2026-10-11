@@ -1,0 +1,39 @@
+# Scenario 3 ? CROSSING_CONFLICT
+# Two aircraft with intersecting flight paths at same flight level (FL360)
+name: "Crossing Conflict (90 Degree Intersect)"
+description: "Eastbound international flight (Dubai to Bangkok) and Northbound domestic flight intersecting over central India at FL360."
+initial_time: 0.0
+aircraft:
+  - id: "ac_ek384"
+    callsign: "EK384"
+    type: "B77W"
+    position:
+      lat: 21.0
+      lon: 77.0
+      alt: 36000
+    velocity:
+      ground_speed: 480
+      vertical_speed: 0
+      heading: 90.0   # Flying East
+    flight_plan:
+      origin: "OMDB"  # Dubai
+      destination: "VTBS"  # Bangkok
+      cruise_altitude: 36000
+      cruise_speed: 480
+
+  - id: "ac_ai442"
+    callsign: "AI442"
+    type: "A320"
+    position:
+      lat: 19.5
+      lon: 78.5
+      alt: 36000
+    velocity:
+      ground_speed: 480
+      vertical_speed: 0
+      heading: 0.0    # Flying North
+    flight_plan:
+      origin: "VOHS"  # Hyderabad
+      destination: "VIDP"  # Delhi
+      cruise_altitude: 36000
+      cruise_speed: 480

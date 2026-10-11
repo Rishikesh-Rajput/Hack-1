@@ -1,0 +1,105 @@
+name: "Multiple Simultaneous Conflicts"
+description: "A busy sector with three separate conflict pairs happening simultaneously."
+initial_time: 0.0
+aircraft:
+  # Pair 1: Head-on at FL350
+  - id: "ac_1a"
+    callsign: "PAIR1A"
+    type: "A320"
+    position:
+      lat: 20.0
+      lon: 79.0
+      alt: 35000
+    velocity:
+      ground_speed: 450
+      vertical_speed: 0
+      heading: 0.0
+    flight_plan:
+      origin: "VOBL"
+      destination: "VIDP"
+      cruise_altitude: 35000
+      cruise_speed: 450
+  - id: "ac_1b"
+    callsign: "PAIR1B"
+    type: "A320"
+    position:
+      lat: 21.0
+      lon: 79.0
+      alt: 35000
+    velocity:
+      ground_speed: 450
+      vertical_speed: 0
+      heading: 180.0
+    flight_plan:
+      origin: "VIDP"
+      destination: "VOBL"
+      cruise_altitude: 35000
+      cruise_speed: 450
+
+  # Pair 2: Crossing at FL330
+  - id: "ac_2a"
+    callsign: "PAIR2A"
+    type: "B738"
+    position:
+      lat: 19.5
+      lon: 77.5
+      alt: 33000
+    velocity:
+      ground_speed: 400
+      vertical_speed: 0
+      heading: 90.0
+    flight_plan:
+      origin: "VABB"
+      destination: "VECC"
+      cruise_altitude: 33000
+      cruise_speed: 400
+  - id: "ac_2b"
+    callsign: "PAIR2B"
+    type: "B738"
+    position:
+      lat: 18.5
+      lon: 78.5
+      alt: 33000
+    velocity:
+      ground_speed: 400
+      vertical_speed: 0
+      heading: 0.0
+    flight_plan:
+      origin: "VOBL"
+      destination: "VIDP"
+      cruise_altitude: 33000
+      cruise_speed: 400
+
+  # Pair 3: Climbing conflict
+  - id: "ac_3a"
+    callsign: "PAIR3A"
+    type: "ATR72"
+    position:
+      lat: 22.0
+      lon: 80.0
+      alt: 20000
+    velocity:
+      ground_speed: 250
+      vertical_speed: 0
+      heading: 90.0
+    flight_plan:
+      origin: "VABB"
+      destination: "VECC"
+      cruise_altitude: 20000
+      cruise_speed: 250
+  - id: "ac_3b"
+    callsign: "PAIR3B"
+    type: "ATR72"
+    position:
+      lat: 22.0
+      lon: 79.9
+      alt: 15000
+    velocity:
+      ground_speed: 250
+      vertical_speed: 1500
+      heading: 90.0
+    flight_plan:
+      origin: "VABB"
+      destination: "VECC"
+      cruise_altitude: 25000
+      cruise_speed: 250

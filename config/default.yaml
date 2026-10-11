@@ -1,0 +1,42 @@
+# Master Configuration for ATCDS Prototype
+simulation:
+  time_step: 1.0
+  speed_multiplier: 1.0
+  max_aircraft: 50
+
+prediction:
+  horizon_sec: 900.0   # 15 minutes
+  step_sec: 5.0        # 5 seconds step
+
+separation:
+  # NOTE: Prototype demonstration values, NOT certified separation standards
+  horizontal_nm: 5.0
+  vertical_ft: 1000.0
+
+severity:
+  critical_sec: 120.0
+  high_sec: 300.0
+  medium_sec: 600.0
+  low_sec: 900.0
+
+maneuver:
+  heading_deltas: [15.0, 30.0]
+  altitude_deltas: [1000.0, 2000.0]
+  speed_deltas_pct: [5.0, 10.0]
+  maneuver_duration_sec: 120.0
+  max_candidates: 10
+
+scoring:
+  safety_margin: 0.25
+  route_deviation: 0.20
+  delay: 0.15
+  fuel_cost: 0.10
+  downstream_conflicts: 0.20
+  maneuver_complexity: 0.10
+
+genai:
+  model: "gemini-2.0-flash"
+  temperature: 0.3
+  max_tokens: 300
+  timeout_sec: 5.0
+  fallback_enabled: true

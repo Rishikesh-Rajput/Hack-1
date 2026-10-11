@@ -1,0 +1,72 @@
+name: "No Feasible Maneuver"
+description: "Aircraft are already in violation of separation minimums and surrounded by traffic, making all maneuvers infeasible."
+initial_time: 0.0
+aircraft:
+  - id: "ac_center1"
+    callsign: "TRP01"
+    type: "A320"
+    position:
+      lat: 20.0
+      lon: 79.0
+      alt: 35000
+    velocity:
+      ground_speed: 400
+      vertical_speed: 0
+      heading: 90.0
+    flight_plan:
+      origin: "VABB"
+      destination: "VECC"
+      cruise_altitude: 35000
+      cruise_speed: 400
+
+  - id: "ac_center2"
+    callsign: "TRP02"
+    type: "B738"
+    position:
+      lat: 20.01
+      lon: 79.01
+      alt: 35000 # Already practically colliding
+    velocity:
+      ground_speed: 400
+      vertical_speed: 0
+      heading: 270.0
+    flight_plan:
+      origin: "VECC"
+      destination: "VABB"
+      cruise_altitude: 35000
+      cruise_speed: 400
+      
+  # Blockers all around
+  - id: "ac_block_top"
+    callsign: "BLK01"
+    type: "B777"
+    position:
+      lat: 20.0
+      lon: 79.0
+      alt: 36000
+    velocity:
+      ground_speed: 400
+      vertical_speed: 0
+      heading: 90.0
+    flight_plan:
+      origin: "VABB"
+      destination: "VECC"
+      cruise_altitude: 36000
+      cruise_speed: 400
+      
+  - id: "ac_block_bottom"
+    callsign: "BLK02"
+    type: "B777"
+    position:
+      lat: 20.0
+      lon: 79.0
+      alt: 34000
+    velocity:
+      ground_speed: 400
+      vertical_speed: 0
+      heading: 90.0
+    flight_plan:
+      origin: "VABB"
+      destination: "VECC"
+      cruise_altitude: 34000
+      cruise_speed: 400
